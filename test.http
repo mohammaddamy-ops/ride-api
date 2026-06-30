@@ -1,0 +1,168 @@
+### =========================================================================
+### PHASE 1: USER REGISTRATION (Create Clean Database Records)
+### =========================================================================
+
+### 1. Register an Admin Account
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "System Administrator", 
+  "email": "admin@example.com",
+  "password": "password123",
+  "role": "admin"
+}
+
+### 2. Register a Passenger Account
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "test 1Passenger",
+  "email": "passenger@example.com",
+  "password": "password123",
+  "role": "passenger"
+}
+
+### 3. Register a Driver Account
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "test Driver",
+  "email": "driver@example.com",
+  "password": "password123",
+  "role": "driver"
+}
+
+
+### =========================================================================
+### PHASE 2: LOGIN & GENERATE JWT TOKENS (Saves tokens into variables)
+### =========================================================================
+
+### 1. Login as Admin
+# @name adminLogin
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Store Admin Token
+@adminToken = {{adminLogin.response.body.access_token}}
+
+### -------------------------------------------------------------------------
+
+### 2. Login as Passenger
+# @name passengerLogin
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "passenger@example.com",
+  "password": "password123"
+}
+
+### Store Passenger Token
+@passengerToken = {{passengerLogin.response.body.access_token}}
+
+### -------------------------------------------------------------------------
+
+### 3. Login as Driver
+# @name driverLogin
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "driver@example.com",
+  "password": "password123"
+}
+
+### Store Driver Token
+@driverToken = {{driverLogin.response.body.access_token}}
+
+
+### =========================================================================
+### PHASE 3: THE CORRECT FLOW (How the system should work logically)
+### =========================================================================
+
+### 1. Passenger Requests a Trip (Passenger ID is taken automatically from Token)
+POST http://localhost:3000/trips
+Content-Type: application/json
+Authorization: Bearer {{passengerToken}}
+
+{
+  "startLocation": "Al-Hashimi Al-Shamali",
+  "endLocation": "Petra Ride"
+}
+
+### 2. Driver Completes the Trip (Make sure Trip ID in URL matches the created trip)
+PATCH http://localhost:3000/trips/1
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
+{
+  "status": "completed"
+}
+
+### 3. Passenger Leaves a High Rating (5 Stars -> Auto Approved)
+POST http://localhost:3000/ratings
+Content-Type: application/json
+Authorization: Bearer {{passengerToken}}
+
+{
+  "tripId": 1,
+  "stars": 5,
+  "comment": "Excellent service!"
+}
+
+
+### =========================================================================
+### PHASE 4: SECURITY & ROLE TESTING (Testing to get 403 Forbidden Errors)
+### =========================================================================
+
+### SECURITY TEST A: Driver tries to request a trip (Should fail!)
+POST http://localhost:3000/trips
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
+{
+  "startLocation": "Downtown",
+  "endLocation": "Amman Mall"
+}
+
+### SECURITY TEST B: Passenger tries to complete a trip (Should fail!)
+PATCH http://localhost:3000/trips/1
+Content-Type: application/json
+Authorization: Bearer {{passengerToken}}
+
+{
+  "status": "completed"
+}
+
+### SECURITY TEST C: Driver tries to view Pending Ratings for Admin (Should fail!)
+GET http://localhost:3000/ratings/pending
+Authorization: Bearer {{driverToken}}
+
+
+### =========================================================================
+### PHASE 5: ADMIN MANAGEMENT & REPORTING (Admin Only Routes)
+### =========================================================================
+
+### Get All Registered Users
+GET http://localhost:3000/users
+Authorization: Bearer {{adminToken}}
+
+### Get All Active Drivers Only
+GET http://localhost:3000/users/drivers
+Authorization: Bearer {{adminToken}}
+
+### Get System Trip History
+GET http://localhost:3000/trips
+Authorization: Bearer {{adminToken}}
+
+### Get All Pending Review Ratings
+GET http://localhost:3000/ratings/pending
+Authorization: Bearer {{adminToken}}
