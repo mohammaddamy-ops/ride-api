@@ -18,7 +18,7 @@ POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
-  "name": "test 1Passenger",
+  "name": "Ahmad Passenger",
   "email": "passenger@example.com",
   "password": "password123",
   "role": "passenger"
@@ -29,12 +29,11 @@ POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
-  "name": "test Driver",
+  "name": "Captain Khaled",
   "email": "driver@example.com",
   "password": "password123",
   "role": "driver"
 }
-
 
 ### =========================================================================
 ### PHASE 2: LOGIN & GENERATE JWT TOKENS (Saves tokens into variables)
@@ -85,10 +84,19 @@ Content-Type: application/json
 
 
 ### =========================================================================
-### PHASE 3: THE CORRECT FLOW (How the system should work logically)
+### PHASE 3: THE CORRECT FLOW (FULL RIDE LIFECYCLE)
 ### =========================================================================
 
-### 1. Passenger Requests a Trip (Passenger ID is taken automatically from Token)
+### 1. Driver goes ONLINE (Must be online to receive trips)
+PATCH http://localhost:3000/users/driver-status
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
+{
+  "status": "online"
+}
+
+### 2. Passenger Requests a Trip
 POST http://localhost:3000/trips
 Content-Type: application/json
 Authorization: Bearer {{passengerToken}}
@@ -98,16 +106,28 @@ Authorization: Bearer {{passengerToken}}
   "endLocation": "Petra Ride"
 }
 
-### 2. Driver Completes the Trip (Make sure Trip ID in URL matches the created trip)
-PATCH http://localhost:3000/trips/1
+### 3. Driver checks for Available Trips
+GET http://localhost:3000/trips/available
+Authorization: Bearer {{driverToken}}
+
+### 4. Driver ACCEPTS the Trip (Assuming Trip ID is 1)
+PATCH http://localhost:3000/trips/1/accept
+Authorization: Bearer {{driverToken}}
+
+### 5. Driver STARTS the Trip
+PATCH http://localhost:3000/trips/1/start
+Authorization: Bearer {{driverToken}}
+
+### 6. Driver COMPLETES the Trip (Sets the final price)
+PATCH http://localhost:3000/trips/1/complete
 Content-Type: application/json
 Authorization: Bearer {{driverToken}}
 
 {
-  "status": "completed"
+  "price": 12.50
 }
 
-### 3. Passenger Leaves a High Rating (5 Stars -> Auto Approved)
+### 7. Passenger Leaves a Rating
 POST http://localhost:3000/ratings
 Content-Type: application/json
 Authorization: Bearer {{passengerToken}}
@@ -115,15 +135,15 @@ Authorization: Bearer {{passengerToken}}
 {
   "tripId": 1,
   "stars": 5,
-  "comment": "Excellent service!"
+  "comment": "Excellent service and smooth ride!"
 }
 
 
 ### =========================================================================
-### PHASE 4: SECURITY & ROLE TESTING (Testing to get 403 Forbidden Errors)
+### PHASE 4: SECURITY & ROLE TESTING (Testing to get 403 Forbidden / 400 Bad Request)
 ### =========================================================================
 
-### SECURITY TEST A: Driver tries to request a trip (Should fail!)
+### SECURITY TEST A: Driver tries to request a trip (Should get 403 Forbidden)
 POST http://localhost:3000/trips
 Content-Type: application/json
 Authorization: Bearer {{driverToken}}
@@ -133,22 +153,26 @@ Authorization: Bearer {{driverToken}}
   "endLocation": "Amman Mall"
 }
 
-### SECURITY TEST B: Passenger tries to complete a trip (Should fail!)
-PATCH http://localhost:3000/trips/1
-Content-Type: application/json
+### SECURITY TEST B: Passenger tries to accept a trip (Should get 403 Forbidden)
+PATCH http://localhost:3000/trips/1/accept
 Authorization: Bearer {{passengerToken}}
 
+### SECURITY TEST C: Driver tries to accept a trip while offline (Change status to offline first)
+PATCH http://localhost:3000/users/driver-status
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
 {
-  "status": "completed"
+  "status": "offline"
 }
 
-### SECURITY TEST C: Driver tries to view Pending Ratings for Admin (Should fail!)
-GET http://localhost:3000/ratings/pending
+### Now try to accept trip 2 (Should get 400 Bad Request)
+PATCH http://localhost:3000/trips/2/accept
 Authorization: Bearer {{driverToken}}
 
 
 ### =========================================================================
-### PHASE 5: ADMIN MANAGEMENT & REPORTING (Admin Only Routes)
+### PHASE 5: ADMIN MANAGEMENT & REPORTING
 ### =========================================================================
 
 ### Get All Registered Users
@@ -161,8 +185,4 @@ Authorization: Bearer {{adminToken}}
 
 ### Get System Trip History
 GET http://localhost:3000/trips
-Authorization: Bearer {{adminToken}}
-
-### Get All Pending Review Ratings
-GET http://localhost:3000/ratings/pending
 Authorization: Bearer {{adminToken}}

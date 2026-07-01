@@ -6,6 +6,13 @@ export enum UserRole {
   PASSENGER = 'passenger',
 }
 
+export enum DriverStatus{
+OFFLINE = 'offline',
+  ONLINE = 'online',
+  IN_TRIP = 'in_trip',
+
+}
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -29,4 +36,14 @@ export class User {
 
   @Column({ type: 'float', default: 0 })
   averageRating!: number; 
+
+
+  @Column({
+
+    type: 'enum',
+    enum : DriverStatus,
+    default :DriverStatus.OFFLINE,
+    nullable: true,
+  })
+  driverStatus!: DriverStatus;
 }

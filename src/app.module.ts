@@ -7,18 +7,18 @@ import { User } from './users/user.entity';
 import { Trip } from './trips/trip.entity';
 import { Rating } from './ratings/rating.entity'; 
 import {  AuthModule } from './auth/auth.module'
-
+import { TripActivity } from './trips/trip-activity.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'db',
-      port: 5432,
-      username: 'postgres',
+        port: 5432,
+      username: 'postgres', 
       password: 'postgres',
       database: 'ride_sharing',
-      entities: [User, Trip, Rating], 
+      entities: [User, Trip, Rating, TripActivity], 
       synchronize: true,
     }),
     UsersModule,

@@ -1,9 +1,9 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe, UseGuards, SetMetadata } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseIntPipe, UseGuards, SetMetadata, Patch, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from './user.entity';
+import { UserRole, DriverStatus } from './user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -26,6 +26,14 @@ export class UsersController {
   @SetMetadata('roles', [UserRole.ADMIN])
   findAllDrivers() {
     return this.usersService.findAllDrivers();
+  }
+
+  @Patch('/driver-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @SetMetadata('roles', [UserRole.DRIVER])
+  updateStatus(@Req() req: any, @Body('status') status: DriverStatus) {
+    const driverId = req.user.sub; 
+    return this.usersService.updateDriverStatus(driverId, status);
   }
 
   @Get('/:id')
